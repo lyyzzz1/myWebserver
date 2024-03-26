@@ -59,7 +59,42 @@ threadpool<T>::~threadpool()
 }
 
 template <typename T>
-bool append(T* request,int state){//向任务队列中加入对应任务
+bool threadpool<T>::append_p(T* request){//向任务队列中加入对应任务
     m_queuelocker.lock();
+    if(m_workqueue.size()>=m_max_requests){
+        m_queuelocker.unlock();
+        return false;
+    }
+    m_workqueue.push_back(request);
+    m_queuelocker.unlock();
+    m_queuestat.post();//信号量+1
+    return true;
 }
+
+template <typename T>
+bool threadpool<T>::append(T* request,int state){
+    m_queuelocker.lock();
+    if(m_workqueue.size()>=m_max_requests){
+        m_queuelocker.unlock();
+        return false;
+    }
+    request->m_state = state;
+    m_workqueue.push_back(request);
+    m_queuelocker.unlock();
+        m_queuestat.post();//信号量+1
+    return true;
+}
+
+template <typename T>
+void* threadpool<T>::worker(void* arg){
+    threadpool* pool = (threadpool*)arg;
+    pool->run();
+    return pool;
+}
+
+template <typename T>
+void threadpool<T>::run(){
+
+}
+
 #endif
