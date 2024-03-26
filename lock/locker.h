@@ -76,7 +76,7 @@ public:
     }
     bool timewait(pthread_mutex_t* m_mutex,struct timespec t){
         int ret;
-        ret = pthread_cond_timedwait(&m_cond,&m_mutex,&t);
+        ret = pthread_cond_timedwait(&m_cond,m_mutex,&t);
         return ret == 0;
     }
     bool signal(){
