@@ -103,7 +103,7 @@ template <typename T> void threadpool<T>::run() {
         if (!request) {
             continue;
         }
-        if (m_actor_model == 1) {
+        if (m_actor_model == 1) {        // 1为reactor
             if (request->m_state == 0) { //读
                 if (request->read_once()) {
                     request->improv = 1;
@@ -121,8 +121,8 @@ template <typename T> void threadpool<T>::run() {
                     request->timer_flag = 1;
                 }
             }
-        } else {
-            connectionRAII mysqlcon(&request->mysql,m_connPool);
+        } else { // 0为Proactor
+            connectionRAII mysqlcon(&request->mysql, m_connPool);
             request->process();
         }
     }
