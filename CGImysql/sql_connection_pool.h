@@ -27,7 +27,7 @@ private:
     sem reserve;
 public:
     MYSQL *GetConnection();
-    bool ReleaseConnection();
+    bool ReleaseConnection(MYSQL *con);
     int GetFreeConn();
     void DestroyPool();
 
@@ -36,21 +36,21 @@ public:
     void init(string url,string User,string PassWord,string DatabaseName,int Port,int MaxConn,int close_log);
 
 public:
-    string m_url;
-    string m_Port;
-    string m_User;
-    string m_PassWord;
-    string m_DatabaseName;
-    int m_close_log;
+    string m_url;       //主机地址
+    string m_Port;      //端口号
+    string m_User;      //SQL用户名
+    string m_PassWord;  //SQL密码
+    string m_DatabaseName; //数据库名称
+    int m_close_log;    //日志开关
 };
 
-connection_pool::connection_pool(/* args */)
+class connectionRAII
 {
-}
-
-connection_pool::~connection_pool()
-{
-}
-
-
+private:
+    MYSQL* conRAII;
+    connection_pool* poolRAII;
+public:
+    connectionRAII(MYSQL** SQL,connection_pool* connPool);
+    ~connectionRAII();
+};
 #endif
