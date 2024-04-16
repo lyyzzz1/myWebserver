@@ -30,6 +30,6 @@ set(SOURCE_FILES
         webserver.h
         )
 
-add_executable(./webserver ${SOURCE_FILES})
+add_executable(webserver ${SOURCE_FILES})
 
-target_link_libraries(./webserver -lpthread -lmysqlclient)
+target_link_libraries(webserver -lpthread -lmysqlclient)

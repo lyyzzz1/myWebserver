@@ -143,7 +143,6 @@ void http_conn::init() {
 }
 
 http_conn::LINE_STATUS http_conn::parse_line() {
-    cout << "开始对报文的各部分进行分割" << endl;
     char temp;
     for (; m_checked_idx < m_read_idx; m_checked_idx++) {
         temp = m_read_buf[m_checked_idx];
@@ -154,7 +153,6 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             } else if (m_read_buf[m_checked_idx + 1] == '\n') {
                 m_read_buf[m_checked_idx++] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
-                cout << "分析完毕，目前分隔出的报文为：" << m_read_buf << endl;
                 return LINE_OK;
             }
             return LINE_BAD;
@@ -162,7 +160,6 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             if (m_checked_idx > 1 && m_read_buf[m_checked_idx - 1] == '\r') {
                 m_read_buf[m_checked_idx - 1] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
-                cout << "分析完毕，目前分隔出的报文为：" << m_read_buf << endl;
                 return LINE_OK;
             }
             return LINE_BAD;
