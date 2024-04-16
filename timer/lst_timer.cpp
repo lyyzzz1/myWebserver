@@ -158,8 +158,10 @@ void Utils::addsig(int sig, void (*handler)(int), bool restart) {
     struct sigaction sa;
     memset(&sa, '\0', sizeof(sa));
     sa.sa_handler = handler;
+    //当设置了这个标志后，如果一个系统调用由于接收到此信号而被中断，系统会自动重新启动该系统调用，而不是返回一个错误。
     if (restart)
         sa.sa_flags |= SA_RESTART;
+    //表示当处理该信号时，阻塞所有的信号
     sigfillset(&sa.sa_mask);
     // assert为一个调试宏，若表达式内为假则会中断程序的运行
     // sigaction为改变系统对特定信号的处理方式的函数，sig为信号，第二个参数为新的处理方式

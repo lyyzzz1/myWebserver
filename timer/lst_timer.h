@@ -37,7 +37,6 @@ struct client_data {
 class util_timer {
   public:
     util_timer() : prev(NULL), next(NULL) {}
-    ~util_timer();
 
   public:
     time_t expire; //过期时间

@@ -16,7 +16,7 @@ class block_queue {
             exit(-1);
 
         m_max_size = max_size;
-        m_sizet = 0;
+        m_size = 0;
         m_front = -1;
         m_back = -1;
         m_array = new T[m_max_size];
@@ -153,7 +153,7 @@ class block_queue {
         }
 
         m_front = (m_front + 1) % m_max_size;
-        item = array[m_front];
+        item = m_array[m_front];
         m_size--;
         m_mutex.unlock();
         return true;

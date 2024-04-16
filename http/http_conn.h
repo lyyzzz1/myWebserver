@@ -55,8 +55,8 @@ class http_conn {
     enum LINE_STATUS { LINE_OK = 0, LINE_BAD, LINE_OPEN };
 
   public:
-    http_conn();
-    ~http_conn();
+    http_conn(){}
+    ~http_conn(){}
 
   public:
     //初始化套接字地址
@@ -153,7 +153,7 @@ class http_conn {
     struct iovec m_iv[2];
     int m_iv_count;
     int cgi;             //是否启用POST
-    char* m_string;      //存储请求头
+    char* m_string;      //存储POST请求中的content
     int bytes_to_send;   //剩余发送字节数
     int bytes_have_send; //已发送字节数
 
@@ -167,5 +167,8 @@ class http_conn {
     char sql_user[100];
     char sql_passwd[100];
     char sql_name[100];
+
+public:
+    int get_sockfd() { return m_sockfd; }
 };
 #endif

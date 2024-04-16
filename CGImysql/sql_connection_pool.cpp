@@ -36,14 +36,15 @@ void connection_pool::init(string url,string User,string PassWord,string Databas
 
         if(con==NULL)
         {
-            LOG_ERROR("MySQL ERROR");//写入日志，目前未实现
+            LOG_ERROR("MySQL ERROR");
             exit(1);
         }
         con = mysql_real_connect(con,url.c_str(),User.c_str(),PassWord.c_str(),DatabaseName.c_str(),Port,"/tmp/mysql.sock",0);
+        cout << "连接成功，编号：" << i << endl;
 
         if(con==NULL)
         {
-            LOG_ERROR("MySQL ERROR");//写入日志，目前未实现
+            LOG_ERROR("MySQL ERROR");
             exit(1);
         }
         connList.push_back(con);
@@ -56,6 +57,7 @@ void connection_pool::init(string url,string User,string PassWord,string Databas
 }
 
 MYSQL* connection_pool::GetConnection(){
+    cout << "GetConnection()" << endl;
     MYSQL* con = NULL;
 
     if(connList.size() == 0)
@@ -64,9 +66,10 @@ MYSQL* connection_pool::GetConnection(){
     }
 
     reserve.wait();
-
+    cout << "获取信号量成功" << endl;
     lock.lock();
-
+    cout << "线程id:" << pthread_self() << "获取锁" << endl;
+    LOG_INFO("%s%ld%s","线程id:",pthread_self(),"获取锁成功");
     con = connList.front();
     connList.pop_front();
 
@@ -74,6 +77,8 @@ MYSQL* connection_pool::GetConnection(){
     ++m_CurConn;
 
     lock.unlock();
+    cout << "线程id:" << pthread_self() << "释放锁" << endl;
+    LOG_INFO("%s%ld%s","线程id:",pthread_self(),"释放锁成功");
     return con;
 }
 

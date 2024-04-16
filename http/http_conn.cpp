@@ -21,10 +21,10 @@ locker m_lock;
 map<string, string> users;
 
 void http_conn::initmysql_result(connection_pool* connPool) {
-    MYSQL* mysql = NULL;
+    MYSQL* mysql = nullptr;
     connectionRAII mysqlcon(&mysql, connPool);
 
-    if (mysql_query(mysql, "SELECT username,passwd FORM user")) {
+    if (mysql_query(mysql, "SELECT username,passwd FROM user")) {
         LOG_ERROR("SELECT error:%s\n", mysql_error(mysql));
     }
 
@@ -35,6 +35,7 @@ void http_conn::initmysql_result(connection_pool* connPool) {
 
     MYSQL_FIELD* fields = mysql_fetch_field(result);
 
+    //将查找到的所有用户名密码存储到map中
     while (MYSQL_ROW row = mysql_fetch_row(result)) {
         string temp1(row[0]);
         string temp2(row[1]);
@@ -101,19 +102,17 @@ void http_conn::init(int sockfd, const sockaddr_in& addr, char* root,
                      int TRIGMode, int close_log, std::string user,
                      std::string passwd, std::string sqlname) {
     m_sockfd = sockfd;
+    cout << "sockfd: " << sockfd << endl;
     m_address = addr;
-
     addfd(m_epollfd, m_sockfd, true, m_TRIGMode);
     m_user_count++;
-
+    cout << "m_user_count++,now is " << m_user_count << endl;
     doc_root = root;
     m_TRIGMode = TRIGMode;
     m_close_log = close_log;
-
     strcpy(sql_user, user.c_str());
     strcpy(sql_passwd, passwd.c_str());
     strcpy(sql_name, sqlname.c_str());
-
     init();
 }
 
@@ -140,10 +139,11 @@ void http_conn::init() {
 
     memset(m_read_buf, '\0', READ_BUFFER_SIZE);
     memset(m_write_buf, '\0', WRITE_BUFFER_SIZE);
-    memset(m_file_address, '\0', FILENAME_LEN);
+    memset(m_real_file, '\0', FILENAME_LEN);
 }
 
 http_conn::LINE_STATUS http_conn::parse_line() {
+    cout << "开始对报文的各部分进行分割" << endl;
     char temp;
     for (; m_checked_idx < m_read_idx; m_checked_idx++) {
         temp = m_read_buf[m_checked_idx];
@@ -154,6 +154,7 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             } else if (m_read_buf[m_checked_idx + 1] == '\n') {
                 m_read_buf[m_checked_idx++] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
+                cout << "分析完毕，目前分隔出的报文为：" << m_read_buf << endl;
                 return LINE_OK;
             }
             return LINE_BAD;
@@ -161,6 +162,7 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             if (m_checked_idx > 1 && m_read_buf[m_checked_idx - 1] == '\r') {
                 m_read_buf[m_checked_idx - 1] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
+                cout << "分析完毕，目前分隔出的报文为：" << m_read_buf << endl;
                 return LINE_OK;
             }
             return LINE_BAD;
@@ -175,15 +177,18 @@ bool http_conn::read_once() {
     int bytes_read = 0;
 
     if (m_TRIGMode == 0) { // LT读数据
+        cout << "LT" << endl;
         bytes_read = recv(m_sockfd, m_read_buf + m_read_idx,
                           READ_BUFFER_SIZE - m_read_idx, 0);
+        cout << "bytes_read: " << bytes_read << endl;
         m_read_idx += bytes_read;
-
+        cout << "m_read_idx: " << m_read_idx << endl;
         if (bytes_read <= 0)
             return false;
-
+        cout << "读取到的报文为：" << m_read_buf << endl;
         return true;
     } else { // ET读数据
+        cout << "ET" << endl;
         while (true) {
             bytes_read = recv(m_sockfd, m_read_buf + m_read_idx,
                               READ_BUFFER_SIZE - m_read_idx, 0);
@@ -220,6 +225,7 @@ User-Agent: Mozilla/5.0
 
 */
 http_conn::HTTP_CODE http_conn::parse_request_line(char* text) {
+    cout << "开始解析请求行" << endl;
     m_url = strpbrk(text, " \t");
     if (!m_url)
         return BAD_REQUEST;
@@ -254,6 +260,10 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char* text) {
     if (strlen(m_url) == 1)
         strcat(m_url, "judge.html");
     m_check_state = CHECK_STATE_HEADER;
+    cout << "解析请求行提取出的url为：" << m_url << endl;
+    cout << "解析请求行提取出的method为：" << method << endl;
+    cout << "解析请求行提取出的version为：" << m_version << endl;
+    cout << "解析请求行完毕" << endl;
     return NO_REQUEST;
 }
 
@@ -296,12 +306,16 @@ http_conn::HTTP_CODE http_conn::parse_content(char* text) {
 }
 
 void http_conn::process() {
+    cout << "进入process" << endl;
     HTTP_CODE read_ret = process_read();
+    cout << "read_ret: " << read_ret << endl;
     if (read_ret == NO_REQUEST) {
         modfd(m_epollfd, m_sockfd, EPOLLIN, m_TRIGMode);
         return;
     }
+    cout << "进入process_write" << endl;
     bool write_ret = process_write(read_ret);
+    cout << "write_ret: " << write_ret << endl;
     if (!write_ret) {
         close_conn();
     }
@@ -309,6 +323,7 @@ void http_conn::process() {
 }
 
 http_conn::HTTP_CODE http_conn::process_read() {
+    cout << "进入process_read" << endl;
     LINE_STATUS line_status = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
     char* text = 0;
@@ -319,26 +334,31 @@ http_conn::HTTP_CODE http_conn::process_read() {
         m_start_line = m_checked_idx;
         LOG_INFO("%s", text);
         switch (m_check_state) {
-        case CHECK_STATE_REQUESTLINE:
+        case CHECK_STATE_REQUESTLINE: {
             ret = parse_request_line(text);
-            if (ret == BAD_REQUEST)
+            if (ret == BAD_REQUEST) {
+                cout << "parse_request_line error" << endl;
                 return BAD_REQUEST;
-            break;
-        case CHECK_STATE_HEADER:
-            ret = parse_headers(text);
-            if (ret == BAD_REQUEST)
-                return BAD_REQUEST;
-            else if (ret == GET_REQUEST) {
-                return do_request();
             }
             break;
-        case CHECK_STATE_CONTENT:
+        }
+        case CHECK_STATE_HEADER: {
+            ret = parse_headers(text);
+            if (ret == BAD_REQUEST) {
+                cout << "parse_headers error" << endl;
+                return BAD_REQUEST;
+            } else if (ret == GET_REQUEST) {
+                return do_request();
+            }
+        } break;
+        case CHECK_STATE_CONTENT: {
             ret = parse_content(text);
             if (ret == GET_REQUEST) {
                 return do_request();
             }
             line_status = LINE_OPEN;
             break;
+        }
         default:
             return INTERNAL_ERROR;
         }
@@ -360,7 +380,48 @@ http_conn::HTTP_CODE http_conn::do_request() {
         strcat(m_url_real, m_url + 2);
         strncpy(m_real_file + len, m_url_real, FILENAME_LEN - len - 1);
         free(m_url_real);
-        //未实现完毕....
+
+        //格式为user=123&passwd=123
+        char name[100], password[100];
+        int i;
+        for (i = 5; m_string[i] != '&'; ++i)
+            name[i - 5] = m_string[i];
+        name[i - 5] = '\0';
+
+        int j = 0;
+        for (i = i + 10; m_string[i] != '\0'; ++i, ++j)
+            password[j] = m_string[i];
+        password[j] = '\0';
+
+        if (flag == '3') {
+            char* sql_insert = (char*)malloc(sizeof(char) * 200);
+            strcpy(sql_insert, "INSERT INTO user(username,passwd) VALUES(");
+            strcat(sql_insert, "'");
+            strcat(sql_insert, name);
+            strcat(sql_insert, "','");
+            strcat(sql_insert, password);
+            strcat(sql_insert, "'");
+
+            if (users.find(name) == users.end()) {
+                m_lock.lock();
+                // 0为查询成功
+                int res = mysql_query(mysql, sql_insert);
+                users.insert(make_pair(name, password));
+                m_lock.unlock();
+
+                if (!res)
+                    strcpy(m_url, "/log.html");
+                else
+                    strcpy(m_url, "/registerError.html");
+            } else
+                strcpy(m_url, "/registerError.html");
+        } else if (flag == '2') {
+            if (users.find(name) != users.end() && users[name] == password) {
+                strcpy(m_url, "/welcome.html");
+            } else {
+                strcpy(m_url, "/logError.html");
+            }
+        }
     }
 
     if (*(p + 1) == '0') { // /0表示为跳转到注册界面
@@ -395,6 +456,7 @@ http_conn::HTTP_CODE http_conn::do_request() {
 
     //通过stat获取请求资源文件信息，成功则将信息更新到m_file_stat结构体
     //失败返回NO_RESOURCE状态，表示资源不存在
+    cout << "m_real_file: " << m_real_file << endl;
     if (stat(m_real_file, &m_file_stat) < 0)
         return NO_RESOURCE;
 

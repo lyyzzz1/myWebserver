@@ -35,7 +35,7 @@ template <typename T>
 threadpool<T>::threadpool(int actor_model, connection_pool* connPool,
                           int thread_number, int max_requests)
     : m_thread_number(thread_number), m_max_requests(max_requests),
-      m_actor_model(actor_model) {
+      m_actor_model(actor_model),m_connPool(connPool),m_threads(NULL) {
     if (thread_number <= 0 || max_requests <= 0) {
         throw std::exception();
     }
@@ -47,6 +47,8 @@ threadpool<T>::threadpool(int actor_model, connection_pool* connPool,
         if (pthread_create(&m_threads[i], NULL, worker, this) != 0) {
             delete[] m_threads;
             throw std::exception();
+        }else{
+            cout<<"the threadpool create thread "<<m_threads[i]<<" success"<<endl; //输出线程创建成功的信息
         }
         if (pthread_detach(m_threads[i])) { //将子线程与主线程进行分离
             delete[] m_threads;
@@ -93,6 +95,9 @@ template <typename T> void threadpool<T>::run() {
     while (true) {
         m_queuestat.wait();
         m_queuelocker.lock();
+        cout << "我是线程" << pthread_self() << "，我开始工作了，我获取的http连接的sockfd是："
+             << m_workqueue.front()->get_sockfd() << endl;
+
         if (m_workqueue.empty()) {
             m_queuelocker.unlock();
             continue;
