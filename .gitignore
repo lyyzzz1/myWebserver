@@ -1,3 +1,5 @@
 .vscode/settings.json
 .leetcode.cpp
 build
+.cache
+.vscode

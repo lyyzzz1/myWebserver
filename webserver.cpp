@@ -239,11 +239,11 @@ bool WebServer::dealwithsignal(bool& timeout, bool& stop_server) {
             switch (signals[i]) {
             case SIGALRM:
                 timeout = true;
-                cout << "signal timeout" <<endl;
+                cout << "signal timeout" << endl;
                 break;
             case SIGTERM:
                 stop_server = true;
-                cout << "signal stop" <<endl;
+                cout << "signal stop" << endl;
                 break;
             }
         }
@@ -264,6 +264,7 @@ void WebServer::dealwithread(int sockfd) {
         while (true) {
             if (users[sockfd].improv == 1) {
                 if (users[sockfd].timer_flag == 1) {
+                    cout << "我在1处deal_timer()..." << endl;
                     deal_timer(timer, sockfd);
                     users[sockfd].timer_flag = 0;
                 }
@@ -276,13 +277,14 @@ void WebServer::dealwithread(int sockfd) {
             LOG_INFO("deal with the client(%s)",
                      inet_ntoa(users[sockfd].get_address()->sin_addr));
 
-            if(m_pool->append_p(&users[sockfd]))
+            if (m_pool->append_p(&users[sockfd]))
                 cout << "append_p()成功..." << endl;
             else
                 cout << "append_p()失败..." << endl;
             if (timer)
                 adjust_timer(timer);
         } else {
+            cout << "我在2处deal_timer()..." << endl;
             deal_timer(timer, sockfd);
         }
     }
@@ -298,6 +300,7 @@ void WebServer::dealwithwrite(int sockfd) {
         while (true) {
             if (users[sockfd].improv == 1) {
                 if (users[sockfd].timer_flag == 1) {
+                    cout << "我在3处deal_timer()..." << endl;
                     deal_timer(timer, sockfd);
                     users[sockfd].timer_flag = 0;
                 }
@@ -313,6 +316,7 @@ void WebServer::dealwithwrite(int sockfd) {
             if (timer)
                 adjust_timer(timer);
         } else {
+            cout << "我在4处deal_timer()..." << endl;
             deal_timer(timer, sockfd);
         }
     }
@@ -345,6 +349,7 @@ void WebServer::eventLoop() {
                 EPOLLERR：表示发生了错误。
                 */
                 util_timer* timer = users_timer[sockfd].timer;
+                cout << "我在5处deal_timer()..." << endl;
                 deal_timer(timer, sockfd);
             } else if ((sockfd == m_pipefd[0]) &&
                        (events[i].events & EPOLLIN)) {

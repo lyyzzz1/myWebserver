@@ -11,6 +11,10 @@ include_directories($(CMAKE_SOURCE_DIR)/timer)
 
 set(CMAKE_CXX_STANDARD 11)
 
+SET(CMAKE_BUILD_TYPE "Debug")
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+
 set(SOURCE_FILES
         main.cpp
         http/http_conn.cpp

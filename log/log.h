@@ -19,6 +19,7 @@ class Log {
 
     static void* flush_log_thread(void* args) {
         Log::getInstance()->async_write_log();
+        return nullptr;
     }
 
     bool init(const char* file_name, int close_log, int log_buf_size = 8192,
@@ -39,6 +40,7 @@ class Log {
             fputs(single_log.c_str(), m_fp);
             m_mutex.unlock();
         }
+        return nullptr;
     }
 
   private:

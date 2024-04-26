@@ -17,7 +17,7 @@ void sort_timer_lst::add_timer(util_timer* timer) {
     if (!timer)
         return;
     if (!head) { //当head为空时，添加该节点即将该节点作为头结点
-        head = timer;
+        head = tail = timer;
         return;
     }
     if (timer->expire < head->expire) {
@@ -47,8 +47,6 @@ void sort_timer_lst::adjust_timer(util_timer* timer) {
     } else {
         timer->prev->next = tmp;
         tmp->prev = timer->prev;
-        timer->next = nullptr;
-        timer->prev = nullptr;
         add_timer(timer, tmp);
     }
 }
